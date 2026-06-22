@@ -1,0 +1,119 @@
+### =========================
+### IDIOMA / TECLADO
+### =========================
+
+d-i localechooser/languagelist select {{ preseed.locale.language }}
+d-i localechooser/preferred-locale select {{ preseed.locale.locale }}
+d-i localechooser/shortlist select {{ preseed.locale.country }}
+d-i keyboard-configuration/xkb-keymap select {{ preseed.locale.keyboard }}
+# Idioma do Instalador e do Sistema Final
+d-i debian-installer/locale string {{ preseed.locale.locale }}
+
+### =========================
+### REDE
+### =========================
+
+netcfg netcfg/get_hostname string {{ preseed.network.hostname }}
+netcfg netcfg/get_domain string {{ preseed.network.domain }}
+netcfg netcfg/choose_interface select {{ preseed.network.interface }}
+netcfg netcfg/link_wait_timeout string {{ preseed.network.link_wait_timeout }}
+
+### =========================
+### MIRROR
+### =========================
+
+choose-mirror-bin mirror/protocol select {{ preseed.mirror.protocol }}
+choose-mirror-bin mirror/country string {{ preseed.mirror.country }}
+choose-mirror-bin mirror/http/hostname string {{ preseed.mirror.hostname }}
+choose-mirror-bin mirror/http/directory string {{ preseed.mirror.directory }}
+choose-mirror-bin mirror/http/mirror select {{ preseed.mirror.hostname }}
+choose-mirror-bin mirror/http/proxy string {{ preseed.mirror.proxy }}
+choose-mirror-bin mirror/suite select {{ preseed.mirror.suite }}
+
+### =========================
+### USUÁRIO
+### =========================
+
+d-i passwd/root-login boolean {{ preseed.user.root_login | lower }}
+d-i passwd/user-fullname string {{ preseed.user.fullname }}
+d-i passwd/username string {{ preseed.user.username }}
+d-i passwd/user-password password {{ preseed.user.password }}
+d-i passwd/user-password-again password {{ preseed.user.password }}
+d-i passwd/user-default-groups string {{ preseed.user.default_groups | join(',') }}
+
+### =========================
+### UEFI + GPT + BTRFS
+### =========================
+### Partitioning
+
+# Força modo UEFI (sem compatibilidade BIOS)
+d-i partman-efi/non_efi_system boolean {{ preseed.partitioning.uefi | lower }}
+
+# Garante tabela GPT (obrigatório para UEFI)
+d-i partman-partitioning/choose_label select {{ preseed.partitioning.label }}
+d-i partman-partitioning/default_label string {{ preseed.partitioning.label }}
+
+# Usar Btfs como filesystem padrão
+d-i partman/default_filesystem string {{ preseed.partitioning.filesystem }}
+d-i partman-basicfilesystems/default_label string {{ preseed.partitioning.label }}
+
+# Seleciona particionamento assistido usando o disco inteiro
+d-i partman-auto/init_automatically_partition select largest_free
+d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select {{ preseed.partitioning.recipe }}
+
+# Disco a ser particionado (SCI2 (0,0,0) = /dev/sda)
+#d-i partman-auto/disk string {{ preseed.partitioning.disk }}
+
+# Confirmações automáticas (sem perguntas)
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+
+### Popularity contest
+# Não participar do levantamento de uso de pacotes
+popularity-contest popularity-contest/participate boolean false
+
+### =========================
+### PACOTES
+### =========================
+
+tasksel tasksel/first multiselect {{ preseed.packages.tasks | join(',') }}
+d-i pkgsel/include string {{ preseed.packages.include | join(' ') }}
+d-i pkgsel/upgrade select {{ preseed.packages.upgrade }}
+
+### =========================
+### TIMEZONE
+### =========================
+
+d-i clock-setup/utc boolean {{ preseed.timezone.utc | lower }}
+d-i time/zone string {{ preseed.timezone.zone }}
+
+### =========================
+### GRUB
+### =========================
+
+d-i grub-efi-amd64-signed/uefi boolean {{ preseed.grub.uefi | lower }}
+d-i grub-installer/force-efi-extra-removable boolean {{ preseed.grub.removable | lower }}
+
+### =========================
+### SSH + SUDO
+### =========================
+
+d-i preseed/late_command string 
+in-target mkdir -p /home/{{ preseed.user.username }}/.ssh; 
+echo "{{ preseed.ssh.public_key }}" > /target/home/{{ preseed.user.username }}/.ssh/authorized_keys; 
+in-target chown -R {{ preseed.user.username }}:{{ preseed.user.username }} /home/{{ preseed.user.username }}/.ssh; 
+in-target chmod 700 /home/{{ preseed.user.username }}/.ssh; 
+in-target chmod 600 /target/home/{{ preseed.user.username }}/.ssh/authorized_keys; 
+{% if preseed.sudo.nopasswd %}
+echo "{{ preseed.user.username }} ALL=(ALL) NOPASSWD:ALL" > /target/etc/sudoers.d/{{ preseed.user.username }}; 
+in-target chmod 440 /etc/sudoers.d/{{ preseed.user.username }}
+{% endif %}
+
+### =========================
+### FINALIZAÇÃO
+### =========================
+
+d-i finish-install/reboot_in_progress note
