@@ -1,0 +1,40 @@
+---
+- name: Garantir que o diretório de destino existe
+  ansible.builtin.file:
+    path: "{{ debian_iso_dest | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Fazer download da ISO do Debian 12
+  ansible.builtin.get_url:
+    url: "{{ debian_iso_url }}"
+    dest: "{{ debian_iso_dest }}"
+    mode: "0644"
+    force: false # install tasks for download
+
+- name: Download da ISO com validação de checksum
+  ansible.builtin.get_url:
+    url: "{{ debian_iso_url }}"
+    dest: "{{ debian_iso_dest }}"
+    checksum: "sha256:95838884f5ea6c82421dfe6baaa5a639dbbe6756c1e380f9fe7a7cb0c1949d2a"
+
+- name: Criar diretório de montagem
+  ansible.builtin.file:
+    path: "{{ debian_mnt }}"
+    state: directory
+    mode: "0755"
+
+- name: Montar ISO
+  ansible.builtin.mount:
+    path: "{{ debian_mnt }}"
+    src: "{{ debian_iso_dest }}"
+    fstype: iso9660
+    opts: loop,ro
+    state: mounted
+
+
+- name: Criar diretório preseed dentro de customizada
+  ansible.builtin.file:
+    path: "{{ playbook_dir | dirname }}/iso/customizada/preseed"
+    state: directory
+    mode: "0755"
