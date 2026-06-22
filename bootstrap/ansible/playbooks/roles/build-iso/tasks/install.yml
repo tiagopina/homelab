@@ -5,7 +5,7 @@
     state: directory
     mode: "0755"
 
-- name: Fazer download da ISO do Debian 12
+- name: Fazer download da ISO do Debian 13.05.0
   ansible.builtin.get_url:
     url: "{{ debian_iso_url }}"
     dest: "{{ debian_iso_dest }}"
@@ -23,18 +23,98 @@
     path: "{{ debian_mnt }}"
     state: directory
     mode: "0755"
+  ignore_errors: true
 
-- name: Montar ISO
-  ansible.builtin.mount:
+- name: Montar ISO persistente
+  ansible.posix.mount:
     path: "{{ debian_mnt }}"
     src: "{{ debian_iso_dest }}"
     fstype: iso9660
     opts: loop,ro
     state: mounted
+  become: true
 
+- name: Copiar conteúdo da ISO para pasta de trabalho
+  ansible.builtin.copy:
+    src: "{{ debian_mnt }}/"
+    dest: "{{ debian_trabalho_dir }}/"
+    remote_src: true
+    mode: preserve
+  become: true
 
 - name: Criar diretório preseed dentro de customizada
   ansible.builtin.file:
     path: "{{ preseed_folder }}"
     state: directory
     mode: "0755"
+
+- name: Gerar preseed.cfg
+  ansible.builtin.template:
+    src: preseed.cfg.j2
+    dest: "{{ preseed_folder }}/preseed.cfg"
+    mode: "0644"
+
+- name: Copiar arquivo com permissões
+  ansible.builtin.copy:
+    src: "{{ preseed_folder }}/preseed.cfg"
+    dest: "{{ debian_trabalho_dir }}/preseed.cfg"
+    mode: "0644"
+  become: true 
+
+
+- name: Copiar conteúdo da ISO para pasta de trabalho
+  ansible.builtin.copy:
+    src: "{{ debian_mnt }}/"
+    dest: "{{ debian_trabalho_dir }}/"
+    remote_src: true
+    mode: preserve
+  become: true
+
+- name: Inserir bloco no grub.cfg após theme
+  ansible.builtin.blockinfile:
+    path: "{{ debian_trabalho_dir }}/boot/grub/grub.cfg"
+    insertafter: '^set theme=/boot/grub/theme/1'
+    block: |
+      echo "================================"
+      echo "  ISO Customizada Homelab {{ ansible_facts['date_time']['date'] }} {{ ansible_facts['date_time']['time'] }}"
+      echo "================================"
+
+      set timeout=5
+      set timeout_style=menu
+      set default=0
+
+      menuentry 'Install Homelab - {{ ansible_facts["date_time"]["date"] }} - Tiago Pina' {
+          set background_color=black
+          linux /install.amd/vmlinuz preseed/file=/cdrom/preseed.cfg auto-install/enable=true vga=788 ---
+          initrd /install.amd/initrd.gz /preseed.cfg
+      }
+  become: true
+
+- name: Detectar isohdpfx.bin
+  ansible.builtin.set_fact:
+    isohdpfx_path: >-
+      {{ lookup('first_found', dict(
+        files=[
+          '/usr/share/syslinux/isohdpfx.bin',
+          '/usr/lib/ISOLINUX/isohdpfx.bin'
+        ],
+        skip=true
+      )) }}
+
+- name: Gerar ISO customizada
+  ansible.builtin.command: >
+    xorriso -as mkisofs
+    -o {{ debian_customizado_iso_dir }}/custom.iso
+    -isohybrid-mbr {{ isohdpfx_path }}
+    -c isolinux/boot.cat
+    -b isolinux/isolinux.bin
+    -no-emul-boot
+    -boot-load-size 4
+    -boot-info-table
+    -eltorito-alt-boot
+    -e boot/grub/efi.img
+    -no-emul-boot
+    -isohybrid-gpt-basdat
+    -J -R
+    {{ debian_trabalho_dir }}
+  become: true
