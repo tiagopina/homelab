@@ -104,7 +104,7 @@
 - name: Gerar ISO customizada
   ansible.builtin.command: >
     xorriso -as mkisofs
-    -o {{ debian_customizado_iso_dir }}/custom.iso
+    -o {{ debian_customizado_iso_dir }}/{{debian_customizado_name}}
     -isohybrid-mbr {{ isohdpfx_path }}
     -c isolinux/boot.cat
     -b isolinux/isolinux.bin

@@ -7,6 +7,7 @@ debian_mnt: "{{ playbook_dir }}/roles/build-iso/files/iso/customizada/mnt"
 debian_trabalho_dir: "{{ playbook_dir }}/roles/build-iso/files/iso/customizada/trabalho"
 preseed_folder: "{{ playbook_dir }}/roles/build-iso/files/iso/customizada/preseed"
 debian_customizado_iso_dir: "{{ playbook_dir }}/roles/build-iso/files/iso/customizada"
+debian_customizado_name: debian-13.5.0-amd64-netinst-custom-pina.iso
 
 preseed:
   locale:
