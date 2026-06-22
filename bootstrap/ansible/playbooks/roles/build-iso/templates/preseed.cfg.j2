@@ -110,7 +110,13 @@ in-target chmod 600 /target/home/{{ preseed.user.username }}/.ssh/authorized_key
 {% if preseed.sudo.nopasswd %}
 echo "{{ preseed.user.username }} ALL=(ALL) NOPASSWD:ALL" > /target/etc/sudoers.d/{{ preseed.user.username }}; 
 in-target chmod 440 /etc/sudoers.d/{{ preseed.user.username }}
+in-target systemctl enable incus;
+in-target systemctl start incus;
+in-target incus storage create default dir;
+in-target incus launch images:fedora/44 vm1 --vm;
 {% endif %}
+
+
 
 ### =========================
 ### FINALIZAÇÃO
