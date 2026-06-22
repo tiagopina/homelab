@@ -35,6 +35,6 @@
 
 - name: Criar diretório preseed dentro de customizada
   ansible.builtin.file:
-    path: "{{ playbook_dir | dirname }}/iso/customizada/preseed"
+    path: "{{ preseed_folder }}"
     state: directory
     mode: "0755"
