@@ -1,3 +1,7 @@
 **/iso/
 *.iso
 **/mnt/
+**/trabalho/
+*.retry
+*.log
+tmp/
