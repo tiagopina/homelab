@@ -5,3 +5,4 @@
 *.retry
 *.log
 tmp/
+*/bootstrap/ansible/playbooks/roles/build-iso/files
