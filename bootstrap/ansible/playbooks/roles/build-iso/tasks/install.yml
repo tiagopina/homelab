@@ -83,7 +83,7 @@
       set timeout_style=menu
       set default=0
 
-      menuentry 'Auto Homelab {{ ansible_facts['date_time']['time'] }} {{ ansible_facts["date_time"]["date"] }} pina' {
+      menuentry 'Auto Homelab {{ ansible_facts['date_time']['time'] }} {{ ansible_facts["date_time"]["date"] }} Pina' {
           set background_color=black
           linux /install.amd/vmlinuz preseed/file=/cdrom/preseed.cfg auto-install/enable=true vga=788 ---
           initrd /install.amd/initrd.gz /preseed.cfg
