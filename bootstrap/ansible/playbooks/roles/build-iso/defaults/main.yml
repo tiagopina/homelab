@@ -1,5 +1,96 @@
 #SPDX-License-Identifier: MIT-0
 ---
 debian_iso_url: "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.5.0-amd64-netinst.iso"
-debian_iso_dest: "{{ playbook_dir | dirname }}/arquivos/iso/original/debian-13.5.0-amd64-netinst.iso"# defaults file for download
-debian_mnt: "{{ playbook_dir | dirname }}/arquivos/iso/customizada/mnt"
+debian_iso_dest: "{{ playbook_dir }}/roles/build-iso/files/iso/original/debian-13.5.0-amd64-netinst.iso"# defaults file for download
+debian_mnt: "{{ playbook_dir }}/roles/build-iso/files/iso/customizada/mnt"
+debian_trabalho_dir: "{{ playbook_dir }}/roles/build-iso/files/iso/customizada/trabalho"
+preseed_folder: "{{ playbook_dir }}/roles/build-iso/files/iso/customizada/preseed"
+debian_customizado_iso_dir: "{{ playbook_dir }}/roles/build-iso/files/iso/customizada"
+
+preseed:
+  locale:
+    language: pt_BR
+    locale: pt_BR.UTF-8
+    country: BR
+    keyboard: br
+
+  network:
+    hostname: homelab
+    domain: local
+    interface: auto
+    link_wait_timeout: 3
+
+  mirror:
+    protocol: http
+    country: BR
+    hostname: debian.c3sl.ufpr.br
+    directory: /debian/
+    suite: stable
+    proxy: ""
+
+  user:
+    root_login: false
+    fullname: Pina
+    username: pina
+    password: 123456
+    default_groups:
+      - sudo
+
+  partitioning:
+    disk: /dev/sda
+    label: gpt
+    filesystem: btrfs
+    recipe: atomic
+    uefi: true
+
+  packages:
+    tasks:
+      - standard
+
+    include:
+      - openssh-server
+      - sudo
+      - curl
+      - ca-certificates
+      - vim
+      # filesystem
+      - btrfs-progs
+      # Incus
+      - incus
+      - lxc
+      - debootstrap
+      # KVM/QEMU
+      - qemu-system-x86
+      - qemu-utils
+      - qemu-kvm
+      - libvirt-daemon-system
+      - libvirt-clients
+      - virtinst
+      - ovmf
+      - cpu-checker
+      # rede
+      - bridge-utils
+      - dnsmasq-base
+      - iproute2
+      - nftables
+
+    upgrade: safe-upgrade
+
+  timezone:
+    utc: true
+    zone: America/Sao_Paulo
+
+  grub:
+    uefi: true
+    removable: true
+
+  ssh:
+    public_key: >-
+      ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN3J+sjVDVU5Tn6GSLBWz1GOswE1FCZyRIM335L12Xzt
+      pyna21@gmail.com
+
+  sudo:
+    nopasswd: true
+
+  finish:
+    reboot: true
